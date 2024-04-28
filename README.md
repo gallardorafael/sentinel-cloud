@@ -1,4 +1,6 @@
-![](assets/readme/sentinel_header.png)
+<p align="center">
+  <img src="assets/readme/sentinel_header.png" align="middle" width = "1000" />
+</p>
 
 # SENTINEL
 AI-powered Drone Surveillance for Autonomous Search and Rescue, Law Enforcement and Defense. SENTINEL is a project developing a comprehensive drone-based system for aerial surveillance applications. 
