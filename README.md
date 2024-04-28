@@ -1,5 +1,5 @@
 # SENTINEL
-AI-powered Drone Surveillance for Autonomous Search and Rescue, Law Enforcement and Defense. SENTINEL is a project developing a comprehensive drone-based surveillance system for aerial vehicles-based surveillance applications. 
+AI-powered Drone Surveillance for Autonomous Search and Rescue, Law Enforcement and Defense. SENTINEL is a project developing a comprehensive drone-based system for aerial surveillance applications. 
 
 SENTINEL is based on a two-tier architecture:
 
