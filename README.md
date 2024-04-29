@@ -27,7 +27,7 @@ SENTINEL Cloud is also the control central to raise events and alerts such as:
 
 ## Passive Surveillance architecture
 <p align="center">
-  <img src="assets/readme/Passive_0.1.0.png" align="middle" width = "1000" />
+  <img src="assets/readme/passive_0.1.0.png" align="middle" width = "1000" />
 </p>
 
 The most basic task of SENTINEL is the **Passive Surveillance**, which basically consists on giving the UAVs the ability to run an object detector and tracker, and report any find of a target object via the ```register_object``` API. The basic flow looks like this:
