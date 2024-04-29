@@ -3,12 +3,12 @@
 </p>
 
 # SENTINEL
-AI-powered Drone Surveillance for Autonomous Search and Rescue, Law Enforcement and Defense. SENTINEL is a project developing a comprehensive drone-based system for aerial surveillance applications.
+AI-powered Drone Surveillance for Autonomous Search and Rescue, Law Enforcement and Defense. SENTINEL is a project developing an AI-based system for aerial surveillance applications.
 
 SENTINEL is based on a two-tier architecture:
 
 - SENTINEL Cloud: Acts as the central hub, providing advanced AI functionalities for object detection, analysis, and event management. It also serves as the control center for raising alerts and coordinating responses.
-- SENTINEL Edge: Deployed on individual drones (Sentinels), equipped with high-performance object detection models for real-time analysis at the edge. SENTINEL Edge communicates with the SENTINEL Cloud via secure RESTful APIs.
+- SENTINEL Edge: Deployed on individual UAVs (Sentinels), equipped with high-performance object detection models for real-time analysis at the edge. SENTINEL Edge communicates with the SENTINEL Cloud via secure RESTful APIs.
 
 ## sentinel-cloud
 SENTINEL Cloud is the server-side of SENTINEL, focused on performing heavier operations that can't be done on SENTINEL Edge. The functionalities of SENTINEL Cloud can be accessed via RESTful APIs, this is the control central for accesing advanced AI features, as well as raising alerts in the central system.
@@ -33,7 +33,7 @@ SENTINEL Cloud is also the control central to raise events and alerts such as:
 The most basic task of SENTINEL is the **Passive Surveillance**, which basically consists on giving the UAVs the ability to run an object detector and tracker, and report any find of a target object via the ```register_object``` API. The basic flow looks like this:
 
 1. The UAVs running SENTINEL Edge will be monitoring (based on a mission plan, route, or manual control) everything in their cameras.
-2. If SENTINEl Edge detects any object of interest (person, car), a Packet will be sent to SENTINEL Cloud via the ```register_object``` API. The packet will include the complete frame, as well as the event metadata: event time, bounding boxes, classes, coordinates, Sentinel ID (unique identifier for the UAV).
+2. If SENTINEL Edge detects any object of interest (person, car), a Packet will be sent to SENTINEL Cloud via the ```register_object``` API. The packet will include the complete frame, as well as the event metadata: event time, bounding boxes, classes, coordinates, Sentinel ID (unique identifier for the UAV).
 3. SENTINEL Cloud will be constantly listening for objects, once an event is registered, the cloud will detect faces and license plates, if there are findings, both the faces and the license plates will be compared against any register in the blacklist databases.
 4. A log builder that lives in SENTINEL Cloud will create a log entry for the Visualizer, which is a web-based tool for visualizing multimodal data over time.
 
