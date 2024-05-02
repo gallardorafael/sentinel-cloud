@@ -308,8 +308,8 @@ def draw_bounding_boxes(image, bboxes, color=(0, 255, 0), thickness=2):
         color = tuple([int(c) for c in color])
 
         # Convert coordinates to top-left and bottom-right corners
-        start_point = (x1, y1)
-        end_point = (x2, y2)
+        start_point = (int(x1), int(y1))
+        end_point = (int(x2), int(y2))
 
         # Draw the rectangle using OpenCV's rectangle() function
         cv2.rectangle(image, start_point, end_point, color, thickness)
