@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
+import cv2
 import numpy as np
-from PIL.Image import Image as PILImage
-from utils.postprocess import non_max_suppression, scale_coords
+from PIL import Image
+from utils.postprocess import draw_bounding_boxes, non_max_suppression, scale_coords
 from utils.preprocess import letterbox_yolov6
 
 import bentoml
@@ -15,7 +16,11 @@ import bentoml
     traffic={"timeout": 10},
 )
 class FaceDetection:
-    def __init__(self, model_tag: Optional[str] = "yolov6n_face") -> None:
+    def __init__(
+        self,
+        model_tag: Optional[str] = "yolov6n_face:latest",
+        input_shape: Tuple[int, int] = (640, 640),
+    ) -> None:
         """Initialize the FaceDetection service.
 
         Args:
@@ -23,29 +28,48 @@ class FaceDetection:
         """
         # Load the ONNX model
         try:
-            self.model = bentoml.onnx.get(model_tag)
+            # This loads the ONNX and returns a onnxruntime.InferenceSession object
+            self.model = bentoml.onnx.load_model(model_tag)
         except Exception as e:
             raise ValueError(f"Failed to initialize the model: {e}")
 
-    def preprocess(self, image: PILImage) -> np.ndarray:
-        """Preprocesses the input image for face detection.
+        self.input_shape = input_shape
+
+    def predict(self, preprocessed_image: np.ndarray):
+        """Detects faces in the input image and returns the bounding boxes.
+
+        This only works for ONNX models.
+        """
+        outputs = self.model.run(["outputs"], {"images": preprocessed_image})
+
+        # Compute ONNX Runtime output prediction
+        ort_inputs = {self.model.get_inputs()[0].name: preprocessed_image}
+
+        # ONNX Runtime will return a list of outputs
+        outputs = self.model.run(None, ort_inputs)
+
+        return outputs
+
+    def _preprocess(self, image: np.ndarray) -> np.ndarray:
+        """Performs all preprocessing steps before predicting over an image. Preprocessing done
+        according to:
+        https://github.com/meituan/YOLOv6/blob/yolov6-face/yolov6/core/inferer.py#L180.
 
         Args:
-            image (PILImage): The input image.
+            image: Image to perform preprocessing on. This assumes an input with cv2 format
+                HWC and will be converted to CHW, also assumed BGR to be converted to RGB
 
         Returns:
-            np.ndarray: The preprocessed image as a NumPy array.
+            preprocessed_image: An object representing the image as required by the actual model.
         """
-        preprocessed_image = np.array(image)
-
         # letterboxing square image to 640, 640
         preprocessed_image = letterbox_yolov6(image, new_shape=self.input_shape, auto=False)[0]
 
         # HWC to CHW, BGR to RGB
-        preprocessed_image = preprocessed_image.transpose((2, 0, 1))[::-1].astype(np.half)
+        preprocessed_image = preprocessed_image.transpose((2, 0, 1))[::-1].astype(np.float32)
 
         # 0 - 255 to 0.0 - 1.0
-        preprocessed_image /= 255
+        preprocessed_image = preprocessed_image / 255.0
 
         # adding batch dim
         preprocessed_image = np.expand_dims(preprocessed_image, axis=0)
@@ -85,15 +109,21 @@ class FaceDetection:
 
         formatted_detections = []
         for det in nms_results:
+            # Note: cast to int to avoid serialization issues with Pydantic
             if len(det):
                 formatted_detections.append(
-                    {"bbox": det[:4], "confidence": det[4], "class": det[5], "landmarks": det[6:]}
+                    {
+                        "bbox": [round(c.item()) for c in det[:4]],
+                        "confidence": det[4].item(),
+                        "class": det[5].item(),
+                        "landmarks": [round(c.item()) for c in det[6:]],
+                    }
                 )
 
         return formatted_detections
 
     @bentoml.api
-    def detect_faces_bboxes(self, image: PILImage) -> List[Dict]:
+    def detect_faces_bboxes(self, image: Image.Image) -> List[Dict]:
         """Detects faces in the input image and returns the bounding boxes.
 
         Args:
@@ -102,10 +132,43 @@ class FaceDetection:
         Returns:
             List[Dict]: The detected faces as a list of dictionaries, each containing the bounding box coordinates, confidence score, class label, and landmarks.
         """
-        preprocessed_image = self.preprocess(image)
+        # simulating that the received image was read from opencv
+        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
-        detections = self.model(preprocessed_image)
+        preprocessed_image = self._preprocess(image)
 
-        formatted_detections = self._postprocess(detections, image.size)
+        detections = self.predict(preprocessed_image)[0]
+
+        formatted_detections = self._postprocess(detections, image.shape[:2])
 
         return formatted_detections
+
+    @bentoml.api
+    def detect_faces_plot(self, image: Image.Image) -> Image.Image:
+        """Detects faces in the input image and returns the bounding boxes.
+
+        Args:
+            image (PILImage): The input image.
+
+        Returns:
+            PILImage: The input image with the detected faces plotted.
+        """
+        # simulating that the received image was read from opencv
+        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+        # actual processing of the image
+        preprocessed_image = self._preprocess(image)
+
+        detections = self.predict(preprocessed_image)[0]
+
+        formatted_detections = self._postprocess(detections, image.shape[:2])
+
+        # converting to PIL image and going back to RGB
+        postprocessed_image = Image.fromarray(
+            draw_bounding_boxes(
+                cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
+                [det["bbox"] for det in formatted_detections],
+            )
+        )
+
+        return postprocessed_image
