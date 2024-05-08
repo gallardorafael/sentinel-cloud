@@ -1,29 +1,33 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+import json
+from typing import Annotated
+
+import cv2
+import numpy as np
+from fastapi import Body, FastAPI, File, Form, UploadFile
 
 app = FastAPI()
 
-# Define a Pydantic model for the object to be received
-class ObjectToRegister(BaseModel):
-    name: str
-    value: int
-
-
-# Define the function to run when an object is received
-def process_object(received_object: ObjectToRegister):
-    print("Received object:", received_object)
-    # Here you can add more logic to process the received object
-    return "Object processed successfully"
-
 
 @app.post("/register_object")
-async def register_object(obj: ObjectToRegister):
-    # Process the received object
-    result = process_object(obj)
-    return {"message": result}
+async def register_object(
+    file: Annotated[UploadFile, File()],
+    data: Annotated[str, Form()],
+):
+    # Decode the additional data from JSON
+    additional_data = json.loads(data)
 
+    print(type(additional_data), additional_data.keys(), additional_data.values())
 
-if __name__ == "__main__":
-    import uvicorn
+    # Read the image file
+    image_bytes = await file.read()
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Convert the bytes to a numpy array
+    nparr = np.frombuffer(image_bytes, np.uint8)
+
+    # Decode the numpy array to an OpenCV image
+    cv_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    # Return a response
+    return {
+        "message": f"Object registered successfully, image with shape {cv_image.shape}, data: {additional_data}"
+    }
