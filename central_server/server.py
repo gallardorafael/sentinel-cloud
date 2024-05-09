@@ -8,7 +8,7 @@ from fastapi import Body, FastAPI, File, Form, UploadFile
 sentinel = FastAPI()
 
 
-@sentinel.post("/sentinel/api/register_object")
+@sentinel.post("/sentinel/api/interest_object")
 async def register_object(
     file: Annotated[UploadFile, File()], data: Annotated[str, Form] = Body(...)
 ):
