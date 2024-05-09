@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
+import bentoml
 import cv2
 import numpy as np
 from PIL import Image
 from utils.postprocess import draw_bounding_boxes, non_max_suppression, scale_coords
 from utils.preprocess import letterbox_yolov6
-
-import bentoml
 
 
 @bentoml.service(

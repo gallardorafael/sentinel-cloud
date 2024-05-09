@@ -1,8 +1,7 @@
 import argparse
 
-import onnx
-
 import bentoml
+import onnx
 
 
 def main(framework: str, model_name: str, model_path: str, batchable: bool):
