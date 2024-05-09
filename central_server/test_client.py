@@ -7,7 +7,7 @@ import requests
 
 def send_image_and_data(url, image_path):
     # Prepare the data
-    payload = {"data": {"coord": "19.0000, 18.00000", "bbox": [10, 10], "run": 3.0}}
+    payload = {"data": json.dumps({"coord": "19.0000, 18.00000", "bbox": [10, 10], "run": 3.0})}
 
     # Convert the image to a byte array
     image = cv2.imread(image_path)

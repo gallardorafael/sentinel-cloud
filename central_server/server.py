@@ -9,7 +9,12 @@ sentinel = FastAPI()
 
 
 @sentinel.post("/sentinel/api/register_object")
-async def register_object(file: Annotated[UploadFile, File()]):
+async def register_object(
+    file: Annotated[UploadFile, File()], data: Annotated[str, Form] = Body(...)
+):
+    # Decode the data
+    additional_data = json.loads(data)
+
     # Read the image file
     image_bytes = await file.read()
 
