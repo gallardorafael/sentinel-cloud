@@ -5,10 +5,10 @@ import cv2
 import numpy as np
 from fastapi import Body, FastAPI, File, Form, UploadFile
 
-app = FastAPI()
+sentinel = FastAPI()
 
 
-@app.post("/sentinel/api/register_object")
+@sentinel.post("/sentinel/api/register_object")
 async def register_object(file: Annotated[UploadFile, File()]):
     # Read the image file
     image_bytes = await file.read()
