@@ -122,17 +122,18 @@ class FaceDetection:
         return formatted_detections
 
     @bentoml.api
-    def detect_faces_bboxes(self, image: Image.Image) -> List[Dict]:
+    def detect_faces_bboxes(self, image: np.ndarray) -> List[Dict]:
         """Detects faces in the input image and returns the bounding boxes.
 
         Args:
-            image (PILImage): The input image.
+            image (np.ndarray): The input image. Assumed to be in cv2 format.
 
         Returns:
             List[Dict]: The detected faces as a list of dictionaries, each containing the bounding box coordinates, confidence score, class label, and landmarks.
         """
-        # simulating that the received image was read from opencv
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        print("Image received in inference server...")
+        # explicit typing as uint8
+        image = image.astype(np.uint8)
 
         preprocessed_image = self._preprocess(image)
 
@@ -143,19 +144,17 @@ class FaceDetection:
         return formatted_detections
 
     @bentoml.api
-    def detect_faces_plot(self, image: Image.Image) -> Image.Image:
+    def detect_faces_plot(self, image: np.ndarray) -> Image.Image:
         """Detects faces in the input image and returns the bounding boxes.
 
         Args:
-            image (PILImage): The input image.
-
+            image (np.ndarray): The input image. Assumed to be in cv2 format.
         Returns:
             PILImage: The input image with the detected faces plotted.
         """
-        # simulating that the received image was read from opencv
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        # explicit typing as uint8
+        image = image.astype(np.uint8)
 
-        # actual processing of the image
         preprocessed_image = self._preprocess(image)
 
         detections = self.predict(preprocessed_image)[0]
