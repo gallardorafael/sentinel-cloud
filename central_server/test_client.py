@@ -30,7 +30,7 @@ def send_image_and_data(url, image_path):
 
 
 if __name__ == "__main__":
-    url = "http://localhost:8001/sentinel/api/register_object"
+    url = "http://localhost:8001/sentinel/api/interest_object"
     image_path = "/home/yibbtstll/Pictures/Rafael/test_Face.jpg"
     response = send_image_and_data(url, image_path)
     print(response.text)
