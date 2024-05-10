@@ -1,4 +1,4 @@
-# SENTINEL Cloud: Core Services
+# SENTINEL Cloud: Central Server
 
 ## How to run the server
 You can run an ASGI server with uvicorn:
