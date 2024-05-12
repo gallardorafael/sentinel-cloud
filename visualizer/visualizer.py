@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional
 
@@ -42,7 +43,7 @@ class SentinelVisualizer:
             rr.save(log_file)
 
         # setup logging
-        self._setup_logging()
+        self.logger = self._setup_logging()
 
         # registered classes
         self.class_to_index = {}
@@ -57,15 +58,19 @@ class SentinelVisualizer:
             timeless=True,
         )
 
+        # creating stats dict
+        self.sentinel_stats = defaultdict(list)
+
     def log_interest_frame(self, cv2_image: np.ndarray) -> None:
+        # destination timeline
         rr.set_time_sequence("frame", self.current_frame)
         rgb = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
-        rr.log("interest_object/frame", rr.Image(rgb).compress(jpeg_quality=85))
+        rr.log("interest_object/frame", rr.Image(rgb))
 
         self.current_frame += 1
 
     def log_interest_bboxes(self, boxes: npt.NDArray[np.float32], class_names=List[str]) -> None:
-
+        # destination timeline
         rr.set_time_sequence("frame", self.current_frame)
         for class_name in class_names:
             if class_name not in self.class_to_index:
@@ -83,12 +88,31 @@ class SentinelVisualizer:
         )
 
     def log_interest_metadata(self, additional_data: dict) -> None:
+        # destination timeline
+        rr.set_time_sequence("frame", self.current_frame)
+
+        # logging metadata
         rr.log(
             "interest_object/frame/metadata", rr.TextDocument(json.dumps(additional_data, indent=4))
         )
+        # creating crowd count series
+        rr.log(
+            "interest_object/stats/crowd",
+            rr.SeriesLine(color=[255, 0, 0], name="Crowd count", width=2),
+            timeless=True,
+        )
+
+        # logging stats (crowd count)
+        if "n_persons" in additional_data:
+            # saving record of number of faces
+            self.sentinel_stats["crowd"].append(additional_data["n_persons"])
+
+            rr.log("interest_object/stats/crowd", rr.Scalar(additional_data["n_persons"]))
 
     def _setup_logging(self) -> None:
         logger = logging.getLogger()
         rerun_handler = rr.LoggingHandler("logs")
         rerun_handler.setLevel(-1)
         logger.addHandler(rerun_handler)
+
+        return logger

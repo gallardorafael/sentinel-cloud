@@ -73,9 +73,10 @@ class SentinelCentralServer(FastAPI):
         # logging the face bboxes
         face_bboxes = [detection["bbox"] for detection in result]
         face_classes = ["face"] * len(face_bboxes)
-        self.visualizer.log_interest_bboxes(boxes=result, class_names=face_classes)
+        self.visualizer.log_interest_bboxes(boxes=face_bboxes, class_names=face_classes)
 
         # logging metadata
+        additional_data["n_persons"] = len(result)  # change to person detection instead of face
         self.visualizer.log_interest_metadata(additional_data)
 
         # log the object
