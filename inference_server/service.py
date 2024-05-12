@@ -17,7 +17,7 @@ from utils.preprocess import letterbox_yolov6
 class FaceDetection:
     def __init__(
         self,
-        model_tag: Optional[str] = "yolov6n_face:latest",
+        model_tag: Optional[str] = "yolov6s_face:latest",
         input_shape: Tuple[int, int] = (640, 640),
     ) -> None:
         """Initialize the FaceDetection service.
@@ -101,7 +101,7 @@ class FaceDetection:
             conf_thres=confidence_thresh,
             agnostic=False,
             extra_data=10,
-            max_det=100,
+            max_det=300,
         )[0]
 
         # reescaling face bboxes
