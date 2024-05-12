@@ -61,6 +61,9 @@ class FaceDetection:
         Returns:
             preprocessed_image: An object representing the image as required by the actual model.
         """
+        # explicit typing as uint8, to avoid resize issues in cv2
+        image = image.astype(np.uint8)
+
         # letterboxing square image to 640, 640
         preprocessed_image = letterbox_yolov6(image, new_shape=self.input_shape, auto=False)[0]
 
@@ -90,7 +93,8 @@ class FaceDetection:
             confidence_thresh (float, optional): The confidence threshold for filtering detections. Defaults to 0.3.
 
         Returns:
-            List[Dict]: The formatted face detection results as a list of dictionaries.
+            List[Dict]: The formatted face detection results as a list of dictionaries. The dictionary contains
+                the bounding box coordinates (format x1y1 ... xNyN), confidence score, class label, and landmarks.
         """
         nms_results = non_max_suppression(
             detections,
@@ -129,12 +133,9 @@ class FaceDetection:
             image (np.ndarray): The input image. Assumed to be in cv2 format.
 
         Returns:
-            List[Dict]: The detected faces as a list of dictionaries, each containing the bounding box coordinates, confidence score, class label, and landmarks.
+            List[Dict]: The detected faces as a list of dictionaries, each containing the bounding box coordinates (format x1y1 ... xNyN),
+            confidence score, class label, and landmarks.
         """
-        print("Image received in inference server...")
-        # explicit typing as uint8
-        image = image.astype(np.uint8)
-
         preprocessed_image = self._preprocess(image)
 
         detections = self.predict(preprocessed_image)[0]
@@ -152,9 +153,6 @@ class FaceDetection:
         Returns:
             PILImage: The input image with the detected faces plotted.
         """
-        # explicit typing as uint8
-        image = image.astype(np.uint8)
-
         preprocessed_image = self._preprocess(image)
 
         detections = self.predict(preprocessed_image)[0]
