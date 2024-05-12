@@ -6,6 +6,8 @@ import requests
 
 
 def send_image_and_data(url, image_path):
+    session = requests.Session()
+
     # Prepare the data
     payload = {"data": json.dumps({"coord": "19.0000, 18.00000", "bbox": [10, 10], "run": 3.0})}
 
@@ -23,7 +25,9 @@ def send_image_and_data(url, image_path):
     }
 
     # Send the POST request
-    response = requests.post(url, data=payload, files=files)
+    response = session.post(url, data=payload, files=files)
+
+    session.close()
 
     # Return the response
     return response
@@ -31,6 +35,6 @@ def send_image_and_data(url, image_path):
 
 if __name__ == "__main__":
     url = "http://localhost:8001/sentinel/api/interest_object"
-    image_path = "/home/yibbtstll/Pictures/Rafael/test_Face.jpg"
+    image_path = "/home/yibbtstll/Projects/sentinel/data/crowd.jpg"
     response = send_image_and_data(url, image_path)
     print(response.text)
