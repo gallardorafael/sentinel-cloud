@@ -60,27 +60,46 @@ class SentinelCentralServer(FastAPI):
         return {"message": f"Object registered successfully."}
 
     def log_interest_object(self, cv2_image: np.ndarray, additional_data: dict):
-        # get face detection bboxes
-        result = self.inference_client.detect_faces_bboxes(image=cv2_image)
-        logger.debug("Face Detection: %s faces", len(result))
-
         # log to the visualizer
         logger.debug("Logging object to the Cloud Visualizer")
-
         # logging the frame
         self.visualizer.log_interest_frame(cv2_image)
 
-        # logging the face bboxes
-        face_bboxes = [detection["bbox"] for detection in result]
-        face_classes = ["face"] * len(face_bboxes)
-        self.visualizer.log_interest_bboxes(boxes=face_bboxes, class_names=face_classes)
+        # TODO: move inference logic to another file
+        # get object detection bboxes
+        object_dets = self.inference_client.detect_objects_bboxes(image=cv2_image)
 
-        # logging metadata
-        additional_data["n_persons"] = len(result)  # change to person detection instead of face
+        if not object_dets:
+            logger.debug("No objects detected")
+            return
+
+        detected_objects = [detection["class"] for detection in object_dets]
+
+        # add additional metadata
+        additional_data["n_persons"] = detected_objects.count("person")
+        logger.debug("Person Detection: %s persons", additional_data["n_persons"])
+
+        # logging person bboxes
+        interest_bboxes = [
+            detection["bbox"] for detection in object_dets if detection["class"] == "person"
+        ]
+        interest_classes = ["person"] * len(interest_bboxes)
+
+        # face detection if persons are detected
+        if additional_data["n_persons"]:
+            # get face detection bboxes
+            face_dets = self.inference_client.detect_faces_bboxes(image=cv2_image)
+            logger.debug("Face Detection: %s faces", len(face_dets))
+
+            # logging the face bboxes
+            face_bboxes = [detection["bbox"] for detection in face_dets]
+            interest_bboxes.extend(face_bboxes)
+            interest_classes.extend(["face"] * len(face_bboxes))
+
+        self.visualizer.log_interest_bboxes(boxes=interest_bboxes, labels=interest_classes)
+
+        # log the metadata to the visualizer
         self.visualizer.log_interest_metadata(additional_data)
-
-        # log the object
-        logger.debug("Object logged successfully")
 
 
 if __name__ == "__main__":
