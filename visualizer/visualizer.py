@@ -3,12 +3,14 @@ import logging
 import uuid
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 import numpy.typing as npt
 import rerun as rr
+
+from inference_server.utils.preprocess import letterbox_yolov6
 
 # Ensure the logging gets written to stderr:
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -23,6 +25,8 @@ deployed Sentinels. A single Cloud Visualizer can manage the streams of
 multiple Sentinels.
 """
 
+CLASS_COLORS = {"face": [255, 0, 0], "person": [0, 255, 0]}
+
 
 class SentinelVisualizer:
     def __init__(
@@ -30,6 +34,7 @@ class SentinelVisualizer:
         app_id: Optional[str] = "default",
         recording_id: Optional[uuid.UUID] = uuid.uuid4(),
         log_file: Optional[Path] = None,
+        frame_size: Optional[Tuple[int, int]] = (640, 640),
     ) -> None:
 
         # init a session in rerun
@@ -51,6 +56,8 @@ class SentinelVisualizer:
         # total frames register
         self.current_frame = 0
 
+        self.frame_size = frame_size
+
         # logging app description
         rr.log(
             "app/description",
@@ -64,26 +71,23 @@ class SentinelVisualizer:
     def log_interest_frame(self, cv2_image: np.ndarray) -> None:
         # destination timeline
         rr.set_time_sequence("frame", self.current_frame)
+
         rgb = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB)
         rr.log("interest_object/frame", rr.Image(rgb))
 
         self.current_frame += 1
 
-    def log_interest_bboxes(self, boxes: npt.NDArray[np.float32], class_names=List[str]) -> None:
+    def log_interest_bboxes(self, boxes: npt.NDArray[np.float32], labels: List[str]) -> None:
         # destination timeline
         rr.set_time_sequence("frame", self.current_frame)
-        for class_name in class_names:
-            if class_name not in self.class_to_index:
-                self.class_to_index[class_name] = len(self.class_to_index)
-
-        class_ids = [self.class_to_index[class_name] for class_name in class_names]
 
         rr.log(
             "interest_object/frame/objects",
             rr.Boxes2D(
                 array=boxes,
                 array_format=rr.Box2DFormat.XYXY,
-                class_ids=class_ids,
+                labels=labels,
+                colors=[CLASS_COLORS[cls] for cls in labels],
             ),
         )
 
