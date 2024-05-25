@@ -50,7 +50,7 @@ class SentinelCentralServer(FastAPI):
         logger.debug(
             "Received a request to register a frame with size: %s and metadata: %s",
             cv_image.shape,
-            additional_data,
+            additional_data.keys(),
         )
 
         # log obect to the visualizer
@@ -65,28 +65,16 @@ class SentinelCentralServer(FastAPI):
         # logging the frame
         self.visualizer.log_interest_frame(cv2_image)
 
-        # TODO: move inference logic to another file
-        # get object detection bboxes
-        object_dets = self.inference_client.detect_objects_bboxes(image=cv2_image)
+        # extracting object detection from additional data
+        object_dets = additional_data["object_dets"]
+        interest_classes = [detection["class"] for detection in object_dets]
+        logger.debug("%s objects of interest detected.", len(interest_classes))
 
-        if not object_dets:
-            logger.debug("No objects detected")
-            return
-
-        detected_objects = [detection["class"] for detection in object_dets]
-
-        # add additional metadata
-        additional_data["n_persons"] = detected_objects.count("person")
-        logger.debug("Person Detection: %s persons", additional_data["n_persons"])
-
-        # logging person bboxes
-        interest_bboxes = [
-            detection["bbox"] for detection in object_dets if detection["class"] == "person"
-        ]
-        interest_classes = ["person"] * len(interest_bboxes)
+        # objects to be logged
+        interest_bboxes = [detection["bbox"] for detection in object_dets]
 
         # face detection if persons are detected
-        if additional_data["n_persons"]:
+        if "person" in interest_classes:
             # get face detection bboxes
             face_dets = self.inference_client.detect_faces_bboxes(image=cv2_image)
             logger.debug("Face Detection: %s faces", len(face_dets))
