@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 from visualizer import SentinelVisualizer
 
-INFERENCER_SERVER_URL = "http://localhost:3000"
+from .utils.defaults import INFERENCER_SERVER_URL, OBJECTS_OF_INTEREST
 
 
 class SentinelCentralServer(FastAPI):
@@ -29,6 +29,9 @@ class SentinelCentralServer(FastAPI):
 
         # define api routes
         self.add_api_route("/sentinel/api/interest_object", self.register_object, methods=["POST"])
+        self.add_api_route(
+            "/sentinel/api/interest_objects_list", self.get_objects_list, methods=["GET"]
+        )
 
         logger.info("Sentinel Central Server initialized")
 
@@ -58,6 +61,14 @@ class SentinelCentralServer(FastAPI):
 
         # Return a response
         return {"message": f"Object registered successfully."}
+
+    async def get_objects_list(self):
+        """Retrieves the list of objects of interest.
+
+        Returns:
+            dict: A dictionary containing the list of objects.
+        """
+        return {"objects_list": OBJECTS_OF_INTEREST}
 
     def log_interest_object(self, cv2_image: np.ndarray, additional_data: dict):
         # log to the visualizer
