@@ -12,7 +12,7 @@ import requests
 from rich.progress import track
 
 SEQUENCE_PATH = "/home/yibbtstll/Projects/sentinel/data/YouTube/carrier_1/frames"
-CENTRAL_SERVER_URL = "http://localhost:8001/sentinel/api/interest_object"
+CENTRAL_SERVER_URL = "http://localhost:8001"
 
 """
 This is a simulation of a SENTINEL, which sends images and data to the central server. The object
@@ -27,7 +27,9 @@ session = requests.Session()
 logger = logging.getLogger(__name__)
 
 # once implmented in the edge, this classes will be updates from Sentinel Cloud
-OBJECTS_OF_INTEREST = ["person", "airplane", "truck", "car", "boat"]
+OBJECTS_OF_INTEREST = session.get(
+    f"{CENTRAL_SERVER_URL}/sentinel/api/interest_objects_list"
+).json()["objects_list"]
 
 
 def generate_random_coordinates():
@@ -104,7 +106,9 @@ def send_image_and_data():
             )
         }
         # Send the POST request
-        response = session.post(CENTRAL_SERVER_URL, data=payload, files=files)
+        response = session.post(
+            f"{CENTRAL_SERVER_URL}/sentinel/api/interest_object", data=payload, files=files
+        )
         logger.debug("Response received from Setinel Cloud: %s.", response.json())
 
 
