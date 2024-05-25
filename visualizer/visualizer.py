@@ -10,8 +10,6 @@ import numpy as np
 import numpy.typing as npt
 import rerun as rr
 
-from inference_server.utils.preprocess import letterbox_yolov6
-
 # Ensure the logging gets written to stderr:
 logging.getLogger().addHandler(logging.StreamHandler())
 logging.getLogger().setLevel("DEBUG")
@@ -25,7 +23,22 @@ deployed Sentinels. A single Cloud Visualizer can manage the streams of
 multiple Sentinels.
 """
 
-CLASS_COLORS = {"face": [255, 0, 0], "person": [0, 255, 0]}
+CLASS_COLORS = {
+    "face": [157, 50, 168],
+    "person": [207, 142, 64],
+    "car": [77, 108, 143],
+    "truck": [30, 87, 18],
+    "airplane": [209, 182, 61],
+    "boat": [245, 66, 215],
+}
+
+SERIES_CONFIGS = [
+    {"route": "interest_object/frame/personnel", "color": [207, 142, 64], "name": "Personnel"},
+    {"route": "interest_object/frame/airplanes", "color": [209, 182, 61], "name": "Airplanes"},
+    {"route": "interest_object/frame/boats", "color": [245, 66, 215], "name": "Boats"},
+    {"route": "interest_object/frame/trucks", "color": [30, 87, 18], "name": "Trucks"},
+    {"route": "interest_object/frame/cars", "color": [77, 108, 143], "name": "Cars"},
+]
 
 
 class SentinelVisualizer:
@@ -65,8 +78,30 @@ class SentinelVisualizer:
             timeless=True,
         )
 
-        # creating stats dict
-        self.sentinel_stats = defaultdict(list)
+        # creating counter series
+        self._create_counter_series(SERIES_CONFIGS)
+
+    def _create_counter_series(self, series_configs: List[dict]) -> None:
+        """Create counter series for logging according to the series_configs.
+
+        This method creates counter series for different objects
+        using the `rr.log` function from the `rr` module. Each series is configured
+        with a specific route, color, name, and width.
+
+        Args:
+            series_configs: A list of dictionaries containing the series configurations, must include
+            the route, color, and name of the series.
+        """
+        for series_config in series_configs:
+            rr.log(
+                series_config["route"],
+                rr.SeriesLine(
+                    color=series_config["color"],
+                    name=series_config["name"],
+                    width=2,
+                ),
+                timeless=True,
+            )
 
     def log_interest_frame(self, cv2_image: np.ndarray) -> None:
         # destination timeline
@@ -99,19 +134,25 @@ class SentinelVisualizer:
         rr.log(
             "interest_object/frame/metadata", rr.TextDocument(json.dumps(additional_data, indent=4))
         )
-        # creating crowd count series
-        rr.log(
-            "interest_object/stats/crowd",
-            rr.SeriesLine(color=[255, 0, 0], name="Crowd count", width=2),
-            timeless=True,
+
+        # getting object counts
+        detected_classes = [detection["class"] for detection in additional_data["object_dets"]]
+        n_persons = detected_classes.count("person")
+        n_boats = detected_classes.count("boat")
+        n_cars = detected_classes.count("car")
+        n_trucks = detected_classes.count("truck")
+        n_airplanes = detected_classes.count("airplane")
+
+        print(
+            f"Detected: {n_persons} persons, {n_boats} boats, {n_cars} cars, {n_trucks} trucks, {n_airplanes} airplanes"
         )
 
-        # logging stats (crowd count)
-        if "n_persons" in additional_data:
-            # saving record of number of faces
-            self.sentinel_stats["crowd"].append(additional_data["n_persons"])
-
-            rr.log("interest_object/stats/crowd", rr.Scalar(additional_data["n_persons"]))
+        # logging stats (counters)
+        rr.log("interest_object/stats/personnel", rr.Scalar(n_persons))
+        rr.log("interest_object/stats/boats", rr.Scalar(n_boats))
+        rr.log("interest_object/stats/cars", rr.Scalar(n_cars))
+        rr.log("interest_object/stats/trucks", rr.Scalar(n_trucks))
+        rr.log("interest_object/stats/airplanes", rr.Scalar(n_airplanes))
 
     def _setup_logging(self) -> None:
         logger = logging.getLogger()
