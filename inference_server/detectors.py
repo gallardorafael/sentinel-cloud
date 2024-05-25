@@ -78,7 +78,7 @@ class YOLOv6Detector:
         self,
         detections,
         original_img_shape: Tuple[int, int],
-        confidence_thresh: float = 0.25,
+        confidence_thresh: float = 0.3,
         return_class_names: bool = True,
     ) -> List[Dict]:
         """Postprocesses the face detection results.
