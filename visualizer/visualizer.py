@@ -122,7 +122,7 @@ class SentinelVisualizer:
                 array=boxes,
                 array_format=rr.Box2DFormat.XYXY,
                 labels=labels,
-                colors=[CLASS_COLORS[cls] for cls in labels],
+                colors=[CLASS_COLORS.get(cls, [255, 255, 255]) for cls in labels],
             ),
         )
 
